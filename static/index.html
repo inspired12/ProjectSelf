@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectSelf - Knowledge Capture</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 ProjectSelf</h1>
+            <p class="tagline">Capturing Your Knowledge & Wisdom</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Progress:</span>
+                <span id="progress-text" class="stat-value">0 / 0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Completion:</span>
+                <span id="completion-text" class="stat-value">0%</span>
+            </div>
+        </div>
+
+        <main id="main-content">
+            <div id="loading-state" class="state-card">
+                <div class="loader"></div>
+                <p>Loading...</p>
+            </div>
+
+            <div id="question-state" class="state-card" style="display: none;">
+                <div class="question-card">
+                    <span class="question-number" id="question-number">Question 1</span>
+                    <h2 class="question-text" id="question-text">Loading question...</h2>
+                    <span class="category-badge" id="category-badge">Category</span>
+                </div>
+
+                <div class="recording-section">
+                    <div id="recording-controls">
+                        <button id="record-btn" class="btn btn-record">
+                            <span class="btn-icon">🎙️</span>
+                            Start Recording
+                        </button>
+                        <div id="recording-indicator" class="recording-indicator" style="display: none;">
+                            <span class="pulse"></span>
+                            Recording...
+                            <span id="recording-time">0:00</span>
+                        </div>
+                    </div>
+
+                    <div id="transcription-section" style="display: none;">
+                        <h3>Your Response:</h3>
+                        <div class="transcription-box" id="transcription-text"></div>
+                        <div class="action-buttons">
+                            <button id="retry-btn" class="btn btn-secondary">
+                                <span class="btn-icon">🔄</span>
+                                Re-record
+                            </button>
+                            <button id="next-btn" class="btn btn-primary">
+                                <span class="btn-icon">➡️</span>
+                                Next Question
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="processing-state" style="display: none;">
+                        <div class="loader"></div>
+                        <p>Transcribing your response...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="complete-state" class="state-card" style="display: none;">
+                <div class="complete-message">
+                    <h2>🎉 Congratulations!</h2>
+                    <p>You've completed all questions!</p>
+                    <p class="stats-summary">
+                        <strong id="total-responses">0</strong> responses captured
+                    </p>
+                    <button id="view-responses-btn" class="btn btn-primary">
+                        View All Responses
+                    </button>
+                    <button id="restart-btn" class="btn btn-secondary">
+                        Start Over
+                    </button>
+                </div>
+            </div>
+
+            <div id="error-state" class="state-card error-card" style="display: none;">
+                <h3>⚠️ Error</h3>
+                <p id="error-message"></p>
+                <button id="retry-load-btn" class="btn btn-primary">Try Again</button>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-links">
+                <a href="#" id="view-all-link">View All Responses</a>
+                <a href="#" id="import-link">Import Questions</a>
+                <a href="#" id="stats-link">Statistics</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal for importing questions -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Import Questions</h2>
+            <p>Paste your questions as JSON (array of strings or objects with 'question' and 'category' fields):</p>
+            <textarea id="questions-input" rows="15" placeholder='["Question 1?", "Question 2?", ...]'></textarea>
+            <button id="import-submit-btn" class="btn btn-primary">Import</button>
+        </div>
+    </div>
+
+    <!-- Modal for viewing responses -->
+    <div id="responses-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>All Responses</h2>
+            <div id="responses-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
