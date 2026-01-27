@@ -231,10 +231,28 @@ This is a personal knowledge capture system, but feel free to fork and adapt it 
 
 MIT License - Feel free to use and modify as needed.
 
+## Development & Task Management
+
+This project uses [Beads](https://github.com/steveyegge/beads) for AI-optimized issue tracking:
+
+```bash
+# Install beads
+npm install -g @beads/bd
+
+# View ready tasks
+bd ready
+
+# See full setup guide
+cat BEADS_SETUP.md
+```
+
+Beads maintains persistent task context and dependencies, perfect for long-horizon AI development.
+
 ## Acknowledgments
 
 - Built with [OpenAI Whisper](https://github.com/openai/whisper)
 - Powered by Flask and vanilla JavaScript
+- Task management via [Beads](https://github.com/steveyegge/beads)
 - Inspired by the goal of creating personal AI reasoning partners
 
 ---
