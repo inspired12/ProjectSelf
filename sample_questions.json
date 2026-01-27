@@ -1,0 +1,122 @@
+[
+    {
+        "question": "What is your core philosophy on life and existence?",
+        "category": "Philosophy"
+    },
+    {
+        "question": "What are the three most important values that guide your decisions?",
+        "category": "Values"
+    },
+    {
+        "question": "How do you define success for yourself?",
+        "category": "Personal Growth"
+    },
+    {
+        "question": "What lessons from your past have shaped who you are today?",
+        "category": "Life Lessons"
+    },
+    {
+        "question": "What role does creativity play in your life and work?",
+        "category": "Creativity"
+    },
+    {
+        "question": "How do you approach problem-solving in complex situations?",
+        "category": "Problem Solving"
+    },
+    {
+        "question": "What is your perspective on failure and learning from mistakes?",
+        "category": "Growth Mindset"
+    },
+    {
+        "question": "How do you maintain focus and productivity in your daily life?",
+        "category": "Productivity"
+    },
+    {
+        "question": "What are your thoughts on the relationship between technology and humanity?",
+        "category": "Technology"
+    },
+    {
+        "question": "How do you define and cultivate meaningful relationships?",
+        "category": "Relationships"
+    },
+    {
+        "question": "What is your approach to continuous learning and personal development?",
+        "category": "Personal Growth"
+    },
+    {
+        "question": "How do you balance logic and emotion in decision-making?",
+        "category": "Decision Making"
+    },
+    {
+        "question": "What are your thoughts on the importance of health and wellness?",
+        "category": "Health"
+    },
+    {
+        "question": "How do you handle stress and maintain mental well-being?",
+        "category": "Mental Health"
+    },
+    {
+        "question": "What is your perspective on money and financial freedom?",
+        "category": "Finance"
+    },
+    {
+        "question": "How do you approach setting and achieving long-term goals?",
+        "category": "Goal Setting"
+    },
+    {
+        "question": "What role does spirituality or mindfulness play in your life?",
+        "category": "Spirituality"
+    },
+    {
+        "question": "How do you define leadership and what makes a great leader?",
+        "category": "Leadership"
+    },
+    {
+        "question": "What are your thoughts on the future of work and careers?",
+        "category": "Career"
+    },
+    {
+        "question": "How do you cultivate and maintain motivation over time?",
+        "category": "Motivation"
+    },
+    {
+        "question": "What is your approach to time management and prioritization?",
+        "category": "Productivity"
+    },
+    {
+        "question": "How do you handle criticism and feedback?",
+        "category": "Personal Development"
+    },
+    {
+        "question": "What are your thoughts on the balance between ambition and contentment?",
+        "category": "Philosophy"
+    },
+    {
+        "question": "How do you approach innovation and thinking outside the box?",
+        "category": "Innovation"
+    },
+    {
+        "question": "What is your perspective on the role of community and collaboration?",
+        "category": "Community"
+    },
+    {
+        "question": "How do you define and pursue happiness?",
+        "category": "Happiness"
+    },
+    {
+        "question": "What are your thoughts on the importance of authenticity?",
+        "category": "Identity"
+    },
+    {
+        "question": "How do you approach conflict resolution and difficult conversations?",
+        "category": "Communication"
+    },
+    {
+        "question": "What role does curiosity play in your personal and professional life?",
+        "category": "Learning"
+    },
+    {
+        "question": "How do you think about legacy and the impact you want to leave?",
+        "category": "Legacy"
+    }
+]
