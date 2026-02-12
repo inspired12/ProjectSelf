@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 import os
 import tempfile
+import re
 from uuid import uuid4
 import requests
 from database import KnowledgeDB
@@ -11,6 +12,80 @@ CORS(app)
 
 # Initialize database
 db = KnowledgeDB()
+
+
+def _parse_question_file(file_path):
+    """Parse JSON question files or numbered plain-text question lists."""
+    if not os.path.exists(file_path):
+        return []
+
+    # Try JSON first.
+    try:
+        import json
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            out = []
+            for item in data:
+                if isinstance(item, str):
+                    text = item.strip()
+                    if text:
+                        out.append({"question": text, "category": "General"})
+                elif isinstance(item, dict):
+                    text = str(item.get("question", item.get("text", ""))).strip()
+                    if text:
+                        out.append({
+                            "question": text,
+                            "category": str(item.get("category", "General")).strip() or "General",
+                        })
+            return out
+    except Exception:
+        pass
+
+    # Fallback: parse numbered text lines and category headings.
+    questions = []
+    category = "General"
+    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                continue
+            cat_match = re.match(r"^Category\s+\d+\s*:\s*(.+?)\s*\(Questions", line, flags=re.I)
+            if cat_match:
+                category = cat_match.group(1).strip()
+                continue
+            q_match = re.match(r"^\d{1,4}\.\s*(.+)$", line)
+            if q_match:
+                text = q_match.group(1).strip()
+                if text:
+                    questions.append({"question": text, "category": category})
+
+    # De-duplicate exact question text while preserving order.
+    deduped = []
+    seen = set()
+    for q in questions:
+        key = q["question"].strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(q)
+    return deduped
+
+
+def ensure_questions_seeded():
+    """Ensure DB has questions; seed from local files if empty."""
+    stats = db.get_stats()
+    if stats["total_questions"] > 0:
+        return
+
+    for candidate in ("1000questions.json", "sample_questions.json"):
+        parsed = _parse_question_file(candidate)
+        if parsed:
+            imported = db.import_questions(parsed)
+            print(f"Seeded questions from {candidate}: imported {imported}")
+            return
+
+    print("No seed question file found; database remains empty.")
 
 # OpenAI-compatible speech service configuration
 STT_BASE_URL = os.getenv("SPEECH_STT_BASE_URL", "http://localhost:5002/v1").rstrip("/")
@@ -36,6 +111,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def index():
     """Serve the main UI"""
     return send_from_directory('static', 'index.html')
+
+
+@app.after_request
+def add_no_cache_headers(response):
+    """Disable client/proxy caching to avoid stale frontend assets."""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @app.route('/api/current-question', methods=['GET'])
@@ -224,6 +308,7 @@ def reset_progress():
 
 
 if __name__ == '__main__':
+    ensure_questions_seeded()
     print("\n" + "="*60)
     print("ProjectSelf - Knowledge Capture System")
     print("="*60)
