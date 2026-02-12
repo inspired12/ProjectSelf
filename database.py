@@ -1,6 +1,4 @@
 import sqlite3
-from datetime import datetime
-import json
 
 class KnowledgeDB:
     def __init__(self, db_path='knowledge.db'):
@@ -68,17 +66,27 @@ class KnowledgeDB:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        for idx, q in enumerate(questions_list):
+        cursor.execute('SELECT COALESCE(MAX(order_index), -1) as max_order FROM questions')
+        start_index = cursor.fetchone()['max_order'] + 1
+        imported_count = 0
+
+        for q in questions_list:
             question_text = q if isinstance(q, str) else q.get('question', q.get('text', ''))
+            question_text = str(question_text).strip()
             category = q.get('category', 'General') if isinstance(q, dict) else 'General'
+
+            if not question_text:
+                continue
 
             cursor.execute('''
                 INSERT INTO questions (question_text, category, order_index)
                 VALUES (?, ?, ?)
-            ''', (question_text, category, idx))
+            ''', (question_text, category, start_index + imported_count))
+            imported_count += 1
 
         conn.commit()
         conn.close()
+        return imported_count
 
     def get_question_by_index(self, index):
         """Get a question by its order index"""
@@ -89,6 +97,8 @@ class KnowledgeDB:
             SELECT id, question_text, category, order_index
             FROM questions
             WHERE order_index = ?
+            ORDER BY id ASC
+            LIMIT 1
         ''', (index,))
 
         row = cursor.fetchone()
@@ -144,6 +154,15 @@ class KnowledgeDB:
         conn.close()
 
         return response_id
+
+    def question_exists(self, question_id):
+        """Check if a question exists by ID"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1 FROM questions WHERE id = ? LIMIT 1', (question_id,))
+        exists = cursor.fetchone() is not None
+        conn.close()
+        return exists
 
     def advance_to_next_question(self):
         """Move to the next question"""

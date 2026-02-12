@@ -3,8 +3,8 @@ from flask_cors import CORS
 import whisper
 import os
 import tempfile
+from uuid import uuid4
 from database import KnowledgeDB
-import json
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
@@ -58,6 +58,12 @@ def transcribe_audio():
 
         if not question_id:
             return jsonify({'success': False, 'error': 'No question_id provided'}), 400
+        if not question_id.isdigit():
+            return jsonify({'success': False, 'error': 'Invalid question_id'}), 400
+
+        question_id_int = int(question_id)
+        if not db.question_exists(question_id_int):
+            return jsonify({'success': False, 'error': 'Question not found'}), 404
 
         # Save the audio file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
@@ -71,13 +77,13 @@ def transcribe_audio():
             transcription = result['text'].strip()
 
             # Save to permanent location
-            audio_filename = f"response_{question_id}_{len(os.listdir(UPLOAD_DIR))}.wav"
+            audio_filename = f"response_{question_id_int}_{uuid4().hex}.wav"
             audio_path = os.path.join(UPLOAD_DIR, audio_filename)
-            os.rename(temp_path, audio_path)
+            os.replace(temp_path, audio_path)
 
             # Save to database
             response_id = db.save_response(
-                question_id=int(question_id),
+                question_id=question_id_int,
                 transcription=transcription,
                 audio_path=audio_path
             )
@@ -135,17 +141,21 @@ def get_responses():
 def import_questions():
     """Import questions from JSON"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         questions = data.get('questions', [])
 
+        if not isinstance(questions, list):
+            return jsonify({'success': False, 'error': 'questions must be a JSON array'}), 400
         if not questions:
             return jsonify({'success': False, 'error': 'No questions provided'}), 400
 
-        db.import_questions(questions)
+        imported_count = db.import_questions(questions)
+        if imported_count == 0:
+            return jsonify({'success': False, 'error': 'No valid questions found'}), 400
 
         return jsonify({
             'success': True,
-            'message': f'Imported {len(questions)} questions'
+            'message': f'Imported {imported_count} questions'
         })
 
     except Exception as e:

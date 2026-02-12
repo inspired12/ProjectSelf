@@ -7,6 +7,7 @@ let mediaRecorder = null;
 let audioChunks = [];
 let recordingStartTime = null;
 let recordingTimer = null;
+let listenersBound = false;
 
 // DOM elements
 const loadingState = document.getElementById('loading-state');
@@ -43,7 +44,11 @@ async function init() {
     await loadCurrentQuestion();
     updateStats();
 
-    // Set up event listeners
+    if (listenersBound) {
+        return;
+    }
+
+    // Set up event listeners once
     recordBtn.addEventListener('click', toggleRecording);
     retryBtn.addEventListener('click', retryRecording);
     nextBtn.addEventListener('click', moveToNextQuestion);
@@ -58,7 +63,8 @@ async function init() {
     document.getElementById('view-responses-btn').addEventListener('click', viewAllResponses);
     document.getElementById('restart-btn').addEventListener('click', restartProgress);
     document.getElementById('retry-load-btn').addEventListener('click', () => {
-        init();
+        loadCurrentQuestion();
+        updateStats();
     });
     importSubmitBtn.addEventListener('click', importQuestions);
 
@@ -75,6 +81,8 @@ async function init() {
             e.target.style.display = 'none';
         }
     });
+
+    listenersBound = true;
 }
 
 // Show specific state
