@@ -137,6 +137,11 @@ main {
 
 #recording-controls {
     margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .btn {
@@ -443,6 +448,10 @@ footer {
     }
 
     .action-buttons {
+        flex-direction: column;
+    }
+
+    #recording-controls {
         flex-direction: column;
     }
 

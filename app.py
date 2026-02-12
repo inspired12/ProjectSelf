@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
-import whisper
 import os
 import tempfile
 from uuid import uuid4
+import requests
 from database import KnowledgeDB
 
 app = Flask(__name__, static_folder='static')
@@ -12,11 +12,20 @@ CORS(app)
 # Initialize database
 db = KnowledgeDB()
 
-# Load Whisper model (using base model for balance of speed/accuracy)
-# Options: tiny, base, small, medium, large
-print("Loading Whisper model...")
-whisper_model = whisper.load_model("base")
-print("Whisper model loaded!")
+# OpenAI-compatible speech service configuration
+STT_BASE_URL = os.getenv("SPEECH_STT_BASE_URL", "http://localhost:5002/v1").rstrip("/")
+STT_API_KEY = os.getenv("SPEECH_STT_API_KEY", "none")
+STT_MODEL = os.getenv("SPEECH_STT_MODEL", "whisper-1")
+
+TTS_BASE_URL = os.getenv("SPEECH_TTS_BASE_URL", "http://localhost:5001/v1").rstrip("/")
+TTS_API_KEY = os.getenv("SPEECH_TTS_API_KEY", "none")
+TTS_MODEL = os.getenv("SPEECH_TTS_MODEL", "piper")
+TTS_VOICE = os.getenv("SPEECH_TTS_VOICE", "en_US-lessac-medium")
+TTS_RESPONSE_FORMAT = os.getenv("SPEECH_TTS_RESPONSE_FORMAT", "mp3")
+
+
+def _auth_headers(api_key):
+    return {"Authorization": f"Bearer {api_key}"} if api_key and api_key != "none" else {}
 
 # Create uploads directory
 UPLOAD_DIR = 'uploads'
@@ -48,7 +57,7 @@ def get_current_question():
 
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe_audio():
-    """Transcribe audio using Whisper"""
+    """Transcribe audio through external OpenAI-compatible STT service."""
     try:
         if 'audio' not in request.files:
             return jsonify({'success': False, 'error': 'No audio file provided'}), 400
@@ -71,10 +80,20 @@ def transcribe_audio():
             temp_path = temp_audio.name
 
         try:
-            # Transcribe using Whisper
-            print(f"Transcribing audio for question {question_id}...")
-            result = whisper_model.transcribe(temp_path)
-            transcription = result['text'].strip()
+            print(f"Transcribing audio for question {question_id} via {STT_BASE_URL}...")
+            with open(temp_path, "rb") as audio_handle:
+                stt_resp = requests.post(
+                    f"{STT_BASE_URL}/audio/transcriptions",
+                    headers=_auth_headers(STT_API_KEY),
+                    files={"file": ("recording.wav", audio_handle, "audio/wav")},
+                    data={"model": STT_MODEL},
+                    timeout=120,
+                )
+            stt_resp.raise_for_status()
+            payload = stt_resp.json()
+            transcription = str(payload.get("text", "")).strip()
+            if not transcription:
+                raise RuntimeError("STT response did not include transcription text")
 
             # Save to permanent location
             audio_filename = f"response_{question_id_int}_{uuid4().hex}.wav"
@@ -101,6 +120,41 @@ def transcribe_audio():
 
     except Exception as e:
         print(f"Error during transcription: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/speak', methods=['POST'])
+def speak_text():
+    """Synthesize text through external OpenAI-compatible TTS service."""
+    try:
+        data = request.get_json(silent=True) or {}
+        text = str(data.get("text", "")).strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'No text provided'}), 400
+
+        voice = str(data.get("voice") or TTS_VOICE)
+        tts_resp = requests.post(
+            f"{TTS_BASE_URL}/audio/speech",
+            headers={
+                **_auth_headers(TTS_API_KEY),
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": TTS_MODEL,
+                "input": text,
+                "voice": voice,
+                "response_format": TTS_RESPONSE_FORMAT,
+            },
+            timeout=120,
+        )
+        tts_resp.raise_for_status()
+        return Response(
+            tts_resp.content,
+            status=200,
+            mimetype=tts_resp.headers.get("Content-Type", "audio/mpeg"),
+        )
+    except Exception as e:
+        print(f"Error during text-to-speech: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -174,6 +228,8 @@ if __name__ == '__main__':
     print("ProjectSelf - Knowledge Capture System")
     print("="*60)
     print("\nServer starting on http://localhost:5000")
+    print(f"STT backend: {STT_BASE_URL} (model={STT_MODEL})")
+    print(f"TTS backend: {TTS_BASE_URL} (model={TTS_MODEL}, voice={TTS_VOICE})")
     print("\nReady to capture your knowledge and wisdom!")
     print("="*60 + "\n")
 

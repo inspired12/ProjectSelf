@@ -5,7 +5,8 @@ A personal knowledge repository system that uses voice transcription to capture 
 ## Features
 
 - 🎙️ **Voice Recording**: Simple browser-based audio recording
-- 🤖 **AI Transcription**: Uses OpenAI Whisper for accurate voice-to-text conversion
+- 🤖 **AI Transcription**: Uses OpenAI-compatible Whisper STT service for voice-to-text conversion
+- 🔊 **Question Playback**: Uses OpenAI-compatible Piper TTS service to read questions aloud
 - 📊 **Progress Tracking**: Visual progress indicators and statistics
 - 💾 **Local Database**: SQLite for simple, portable storage
 - 🎯 **Question-Guided**: Structured approach with customizable questions
@@ -16,7 +17,9 @@ A personal knowledge repository system that uses voice transcription to capture 
 - Python 3.8 or higher
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - Microphone access
-- ~2GB free disk space (for Whisper models)
+- Local speech services running:
+  - Whisper STT (`http://localhost:5002/v1`)
+  - Piper TTS (`http://localhost:5001/v1`)
 
 ## Installation
 
@@ -44,7 +47,20 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**Note**: The first time you run the app, Whisper will download the model (~140MB for the base model), which may take a few minutes.
+### 4. Configure Speech Service Endpoints (Optional)
+
+The app defaults to local services on `localhost` and can be overridden with env vars:
+
+```bash
+export SPEECH_STT_BASE_URL=http://localhost:5002/v1
+export SPEECH_STT_MODEL=whisper-1
+export SPEECH_STT_API_KEY=none
+
+export SPEECH_TTS_BASE_URL=http://localhost:5001/v1
+export SPEECH_TTS_MODEL=piper
+export SPEECH_TTS_VOICE=en_US-lessac-medium
+export SPEECH_TTS_API_KEY=none
+```
 
 ## Quick Start
 
@@ -79,6 +95,8 @@ Navigate to: `http://localhost:5000`
 5. Click "Stop Recording"
 6. Review the transcription
 7. Click "Next Question" to continue
+
+You can also click **Listen to Question** to hear each prompt via Piper TTS.
 
 ## Question Format
 
@@ -141,28 +159,29 @@ The system uses SQLite with three main tables:
 The Flask backend provides these endpoints:
 
 - `GET /api/current-question` - Get the current question
-- `POST /api/transcribe` - Transcribe audio and save response
+- `POST /api/transcribe` - Transcribe audio via external Whisper STT and save response
+- `POST /api/speak` - Synthesize text via external Piper TTS (used by question playback)
 - `POST /api/next-question` - Move to next question
 - `GET /api/stats` - Get overall statistics
 - `GET /api/responses` - Get all responses
 - `POST /api/import-questions` - Import questions
 - `POST /api/reset-progress` - Reset progress to start
 
-## Whisper Model Options
+## Speech Service Configuration
 
-The default configuration uses the "base" model. You can change this in `app.py`:
+### STT (Whisper-compatible)
 
-```python
-whisper_model = whisper.load_model("base")  # Change to: tiny, small, medium, or large
-```
+- `SPEECH_STT_BASE_URL` (default: `http://localhost:5002/v1`)
+- `SPEECH_STT_MODEL` (default: `whisper-1`)
+- `SPEECH_STT_API_KEY` (default: `none`)
 
-| Model  | Size  | Speed | Accuracy |
-|--------|-------|-------|----------|
-| tiny   | 39M   | Fast  | Good     |
-| base   | 74M   | Fast  | Better   |
-| small  | 244M  | Medium| Great    |
-| medium | 769M  | Slow  | Excellent|
-| large  | 1550M | Slower| Best     |
+### TTS (Piper-compatible)
+
+- `SPEECH_TTS_BASE_URL` (default: `http://localhost:5001/v1`)
+- `SPEECH_TTS_MODEL` (default: `piper`)
+- `SPEECH_TTS_VOICE` (default: `en_US-lessac-medium`)
+- `SPEECH_TTS_RESPONSE_FORMAT` (default: `mp3`)
+- `SPEECH_TTS_API_KEY` (default: `none`)
 
 ## Exporting Your Knowledge
 
@@ -196,9 +215,13 @@ This system is designed as the foundation for creating a personal reasoning part
 - Check browser settings (Settings → Privacy → Microphone)
 - Try a different browser
 
-### Whisper Installation Issues
-- On Mac with M1/M2: Install specific PyTorch version
-- On Windows: May need Microsoft C++ Build Tools
+### Speech Service Connection Issues
+
+- Verify speech backends are running:
+  - `curl http://localhost:5002/health` (Whisper STT)
+  - `curl http://localhost:5001/health` (Piper TTS)
+- Verify configured env vars point to reachable service URLs.
+- Check app server logs for upstream HTTP errors.
 
 ### Port 5000 Already in Use
 Change the port in `app.py`:
@@ -250,7 +273,7 @@ Beads maintains persistent task context and dependencies, perfect for long-horiz
 
 ## Acknowledgments
 
-- Built with [OpenAI Whisper](https://github.com/openai/whisper)
+- Speech serving via OpenAI-compatible adapters (Whisper STT + Piper TTS)
 - Powered by Flask and vanilla JavaScript
 - Task management via [Beads](https://github.com/steveyegge/beads)
 - Inspired by the goal of creating personal AI reasoning partners

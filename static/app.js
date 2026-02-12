@@ -23,6 +23,7 @@ const progressText = document.getElementById('progress-text');
 const completionText = document.getElementById('completion-text');
 
 const recordBtn = document.getElementById('record-btn');
+const playQuestionBtn = document.getElementById('play-question-btn');
 const recordingIndicator = document.getElementById('recording-indicator');
 const recordingTime = document.getElementById('recording-time');
 const transcriptionSection = document.getElementById('transcription-section');
@@ -49,6 +50,7 @@ async function init() {
     }
 
     // Set up event listeners once
+    playQuestionBtn.addEventListener('click', playQuestionAudio);
     recordBtn.addEventListener('click', toggleRecording);
     retryBtn.addEventListener('click', retryRecording);
     nextBtn.addEventListener('click', moveToNextQuestion);
@@ -136,12 +138,51 @@ function displayQuestion(question) {
     categoryBadge.textContent = question.category || 'General';
 
     // Reset recording UI
+    playQuestionBtn.disabled = false;
+    playQuestionBtn.innerHTML = '<span class="btn-icon">🔊</span> Listen to Question';
     recordBtn.disabled = false;
     recordBtn.classList.remove('recording');
     recordBtn.innerHTML = '<span class="btn-icon">🎙️</span> Start Recording';
     recordingIndicator.style.display = 'none';
     transcriptionSection.style.display = 'none';
     processingState.style.display = 'none';
+}
+
+// Play question audio via backend TTS proxy
+async function playQuestionAudio() {
+    if (!currentQuestion || !currentQuestion.question_text) {
+        return;
+    }
+
+    try {
+        playQuestionBtn.disabled = true;
+        playQuestionBtn.innerHTML = '<span class="btn-icon">⏳</span> Generating...';
+
+        const response = await fetch(`${API_BASE}/api/speak`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: currentQuestion.question_text })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || `TTS request failed (${response.status})`);
+        }
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.onended = () => URL.revokeObjectURL(audioUrl);
+        audio.play();
+    } catch (error) {
+        console.error('Error generating question audio:', error);
+        alert(`Failed to generate question audio: ${error.message}`);
+    } finally {
+        playQuestionBtn.disabled = false;
+        playQuestionBtn.innerHTML = '<span class="btn-icon">🔊</span> Listen to Question';
+    }
 }
 
 // Toggle recording
